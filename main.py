@@ -66,6 +66,9 @@ def done_button(event_id: str):
     return builder.as_markup()
 
 @router.message(F.text == "/start")
+async def start_handler(message: Message):
+    await message.answer("👋 Привет! Я твой бот-напоминалка. Я в деле! 🟢")
+
 @router.message(F.text == "/проверка")
 async def check_handler(message: Message):
     await message.answer("✅ Бот работает. Напоминания активны.")
