@@ -12,7 +12,7 @@ from dotenv import load_dotenv
 
 from config import WEBHOOK_PATH, WEBHOOK_SECRET, WEBAPP_HOST, WEBAPP_PORT, WEBHOOK_URL
 from reminders import schedule_all_reminders
-from utils import main_menu_kb
+from utils import main_menu_keyboard as main_menu_kb
 
 load_dotenv()
 
