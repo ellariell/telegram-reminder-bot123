@@ -1,27 +1,25 @@
-import asyncio
 from aiogram import Bot, Dispatcher, types
 from aiogram.enums import ParseMode
-from aiogram.webhook.aiohttp_server import setup_application
-from aiohttp import web
+from aiogram.client.default import DefaultBotProperties
+from aiogram.types import Message
+from aiogram.fsm.storage.memory import MemoryStorage
+from aiogram.filters import CommandStart
+import asyncio
+import os
+from dotenv import load_dotenv
 
-from config import TOKEN, WEBHOOK_PATH, WEBHOOK_URL, WEB_SERVER_HOST, WEB_SERVER_PORT
+load_dotenv()
+TOKEN = os.getenv("BOT_TOKEN")
 
-bot = Bot(token=TOKEN, parse_mode=ParseMode.HTML)
-dp = Dispatcher()
+bot = Bot(token=TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
+dp = Dispatcher(storage=MemoryStorage())
 
-@dp.message()
-async def echo(message: types.Message):
-    await message.answer("Привет! Это echo бот.")
-
-async def on_startup():
-    await bot.set_webhook(WEBHOOK_URL)
+@dp.message(CommandStart())
+async def start_handler(message: Message):
+    await message.answer("Привет! Я бот на aiogram 3.7+")
 
 async def main():
-    app = web.Application()
-    dp.startup.register(on_startup)
-    dp.include_router(dp)
-    setup_application(app, dp, path=WEBHOOK_PATH)
-    return app
+    await dp.start_polling(bot)
 
 if __name__ == "__main__":
-    web.run_app(main(), host=WEB_SERVER_HOST, port=WEB_SERVER_PORT)
+    asyncio.run(main())
