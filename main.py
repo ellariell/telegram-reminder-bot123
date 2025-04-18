@@ -13,7 +13,7 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
 
-TOKEN = "your_token_here"
+TOKEN = "7648494160:AAFxkHe-E9-1revY1tMGM1gVFz92L6zaXKI"
 USER_ID = 1130771677  # замени на свой Telegram ID
 
 bot = Bot(token=TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
@@ -66,6 +66,10 @@ def done_button(event_id: str):
     return builder.as_markup()
 
 @router.message(F.text == "/start")
+@router.message(F.text == "/проверка")
+async def check_handler(message: Message):
+    await message.answer("✅ Бот работает. Напоминания активны.")
+
 async def start_handler(message: Message):
     await message.answer("Привет! Я жив и слежу за твоим режимом 🟢")
 
