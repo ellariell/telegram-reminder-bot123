@@ -121,7 +121,8 @@ async def main():
     logging.info(f"WEBHOOK URL: {WEBHOOK_URL + WEBHOOK_PATH}")
     logging.info(f"Listening on port {WEB_SERVER_PORT}")
 
-    await web._run_app(app, host=WEB_SERVER_HOST, port=WEB_SERVER_PORT)
+    await web.run_app(app, host=WEB_SERVER_HOST, port=WEB_SERVER_PORT)  # ← исправлено здесь
 
 if __name__ == "__main__":
     asyncio.run(main())
+
