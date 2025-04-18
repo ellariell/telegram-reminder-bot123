@@ -31,7 +31,6 @@ async def on_startup(dispatcher: Dispatcher, bot: Bot):
 async def main():
     app = web.Application()
     dp.startup.register(on_startup)
-    dp.include_router(dp.router)
     webhook_requests_handler = SimpleRequestHandler(dispatcher=dp, bot=bot, secret_token=WEBHOOK_SECRET)
     webhook_requests_handler.register(app, path=WEBHOOK_PATH)
     await bot.set_webhook(WEBHOOK_URL, secret_token=WEBHOOK_SECRET)
