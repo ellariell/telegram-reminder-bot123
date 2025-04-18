@@ -31,6 +31,7 @@ if os.path.exists(HISTORY_FILE):
         completed = json.load(f)
 
 reminders = [
+reminders = [
     ("⏰ Подъём", "05:50"),
     ("🥣 Завтрак", "06:10"),
     ("💊 Таблетки (утро)", "07:30"),
@@ -95,11 +96,14 @@ async def on_done(callback: CallbackQuery):
     save_history()
     await callback.message.edit_text(f"✅ {key} выполнено!")
 
+
 @dp.message(F.text == "/start")
 async def start(message: Message):
-    menu = types.ReplyKeyboardMarkup(resize_keyboard=True)
-    menu.add(types.KeyboardButton(text="/меню"))
-    await message.answer("👋 Привет! Я жив и работаю 🟢")
+    keyboard = ReplyKeyboardMarkup(resize_keyboard=True, keyboard=[
+        [KeyboardButton(text="📋 Меню")]
+    ])
+    await message.answer("👋 Привет! Я жив и работаю 🟢", reply_markup=keyboard)
+
 
 @dp.message(F.text == "/проверка")
 async def check(message: Message):
