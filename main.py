@@ -84,15 +84,14 @@ async def handle_answer(message: Message, state: FSMContext):
         await bot.send_message(chat_id=message.chat.id, text="💊 Эй, не забудь таблетки, пожалуйста!")
     await state.clear()
 
-@dp.message()
-# placeholder_removed(message: Message):
+
+        else:
+            await message.answer("⚠️ Не понял формат. Попробуй так: напомни мне завтра в 08:00 забрать посылку")
+        return
     await message.answer("Напиши /start чтобы начать или жди напоминаний ⏰")
 
-async def ask_tablets(chat_id: int, state: FSMContext):
-    await bot.send_message(chat_id=chat_id, text="💊 Ты уже принял утренние таблетки?", reply_markup=kb)
-    await state.set_state(TabletCheck.awaiting_answer)
+ий
 
-# Цикл напоминан
 @dp.message()
 async def fallback(message: Message, state: FSMContext):
     if message.text.lower().startswith("напомни мне"):
@@ -103,9 +102,8 @@ async def fallback(message: Message, state: FSMContext):
         else:
             await message.answer("⚠️ Не понял формат. Попробуй так: напомни мне завтра в 08:00 забрать посылку")
         return
-    await message.answer("Напиши /start чтобы начать или жди напоминаний ⏰")
+    await message.answer("Напиши /start, чтобы начать или жди напоминаний ⏰")
 
-ий
 async def scheduler():
     while True:
         now = datetime.now().time().replace(second=0, microsecond=0)
