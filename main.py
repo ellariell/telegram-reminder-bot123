@@ -28,15 +28,15 @@ async def on_startup(dispatcher: Dispatcher, bot: Bot):
     await schedule_all_reminders(bot)
     logging.info("🔔 Напоминания запущены")
 
-async def main():
-    app = web.Application()
-    dp.startup.register(on_startup)
-    webhook_requests_handler = SimpleRequestHandler(dispatcher=dp, bot=bot, secret_token=WEBHOOK_SECRET)
-    webhook_requests_handler.register(app, path=WEBHOOK_PATH)
-    await bot.set_webhook(WEBHOOK_URL, secret_token=WEBHOOK_SECRET)
-    setup_application(app, dp, bot=bot)
-    web.run_app(app, host=WEBAPP_HOST, port=WEBAPP_PORT)
+logging.basicConfig(level=logging.INFO)
+app = web.Application()
+dp.startup.register(on_startup)
+webhook_requests_handler = SimpleRequestHandler(dispatcher=dp, bot=bot, secret_token=WEBHOOK_SECRET)
+webhook_requests_handler.register(app, path=WEBHOOK_PATH)
 
-if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO)
-    asyncio.run(main())
+async def configure():
+    await bot.set_webhook(WEBHOOK_URL, secret_token=WEBHOOK_SECRET)
+
+asyncio.get_event_loop().run_until_complete(configure())
+setup_application(app, dp, bot=bot)
+web.run_app(app, host=WEBAPP_HOST, port=WEBAPP_PORT)
