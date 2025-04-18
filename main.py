@@ -6,7 +6,7 @@ import os
 from datetime import datetime
 from aiogram import Bot, Dispatcher, F
 from aiogram.enums import ParseMode
-from aiogram.types import Message, CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton
+from aiogram.types import Message, ReplyKeyboardMarkup, KeyboardButton, CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.client.default import DefaultBotProperties
 from aiogram.fsm.storage.memory import MemoryStorage
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
@@ -65,6 +65,8 @@ async def on_done(callback: CallbackQuery):
 
 @dp.message(F.text == "/start")
 async def start(message: Message):
+    menu = types.ReplyKeyboardMarkup(resize_keyboard=True)
+    menu.add(types.KeyboardButton(text="/меню"))
     await message.answer("👋 Привет! Я жив и работаю 🟢")
 
 @dp.message(F.text == "/проверка")
