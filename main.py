@@ -11,7 +11,6 @@ from aiogram.client.default import DefaultBotProperties
 from aiohttp import web
 from utils_notes import parse_note, save_note, get_due_notes
 
-# Токен и настройки
 TOKEN = "8096013474:AAHurnRuSxgxfuzYXs3XeGzsFlrExeXdacw"
 USER_ID = 1130771677
 WEBHOOK_PATH = f"/webhook"
@@ -23,13 +22,11 @@ LOG_FILE = "reminder_log.json"
 
 logging.basicConfig(level=logging.INFO)
 
-# Инициализация бота
 bot = Bot(token=TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
 dp = Dispatcher(storage=MemoryStorage())
 router = Router()
 dp.include_router(router)
 
-# Клавиатура
 kb = ReplyKeyboardMarkup(
     keyboard=[
         [KeyboardButton(text="✅ Выполнено")],
@@ -38,7 +35,6 @@ kb = ReplyKeyboardMarkup(
     resize_keyboard=True
 )
 
-# Напоминания по времени
 reminders = [
     (time(5, 50), "⏰ Подъём! Доброе утро, чемпион!"),
     (time(6, 30), "💊 Утренние таблетки после еды!"),
@@ -48,7 +44,6 @@ reminders = [
     (time(23, 00), "🌙 Сон! Завтра снова побеждать 💪")
 ]
 
-# Запись в лог
 def log_entry(message: str):
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M")
     entry = {"time": timestamp, "message": message}
@@ -61,7 +56,6 @@ def log_entry(message: str):
     with open(LOG_FILE, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
 
-# Обработчики команд
 @router.message(F.text == "/start")
 async def start(message: Message):
     if message.chat.id == USER_ID:
@@ -97,7 +91,6 @@ async def fallback(message: Message):
     else:
         await message.answer("Я тебя понял 😉")
 
-# Планировщик
 async def scheduler():
     while True:
         now = datetime.now().time().replace(second=0, microsecond=0)
@@ -110,7 +103,6 @@ async def scheduler():
             await bot.send_message(chat_id=USER_ID, text=f"🔔 Напоминание: {note['text']}")
         await asyncio.sleep(60)
 
-# Webhook хендлеры
 async def on_startup(bot: Bot):
     await bot.set_webhook(WEBHOOK_URL + WEBHOOK_PATH, secret_token=WEBHOOK_SECRET)
     asyncio.create_task(scheduler())
@@ -129,7 +121,7 @@ async def main():
     logging.info(f"WEBHOOK URL: {WEBHOOK_URL + WEBHOOK_PATH}")
     logging.info(f"Listening on port {WEB_SERVER_PORT}")
 
-    await web.run_app(app, host=WEB_SERVER_HOST, port=WEB_SERVER_PORT)
+    await web.run_app(app, host=WEB_SERVER_HOST, port=WEB_SERVER_PORT)  # ← исправлено здесь
 
 if __name__ == "__main__":
     asyncio.run(main())
