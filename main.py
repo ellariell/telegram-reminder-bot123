@@ -1,25 +1,26 @@
-from aiogram import Bot, Dispatcher, types
+import asyncio
+import logging
+import os
+
+from aiogram import Bot, Dispatcher
 from aiogram.enums import ParseMode
 from aiogram.client.default import DefaultBotProperties
-from aiogram.types import Message
-from aiogram.fsm.storage.memory import MemoryStorage
-from aiogram.filters import CommandStart
-import asyncio
-import os
+
 from dotenv import load_dotenv
+
+from handlers import menu, scheduler
+from utils.notify import schedule_reminders
 
 load_dotenv()
 TOKEN = os.getenv("BOT_TOKEN")
-
 bot = Bot(token=TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
-dp = Dispatcher(storage=MemoryStorage())
-
-@dp.message(CommandStart())
-async def start_handler(message: Message):
-    await message.answer("Привет! Я бот на aiogram 3.7+")
+dp = Dispatcher()
 
 async def main():
+    dp.include_routers(menu.router, scheduler.router)
+    await schedule_reminders(bot)
     await dp.start_polling(bot)
 
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO)
     asyncio.run(main())
