@@ -1,82 +1,54 @@
 import asyncio
-from datetime import datetime, time
-from aiogram import Bot, Dispatcher, types
+from aiogram import Bot, Dispatcher, F
 from aiogram.enums import ParseMode
-from aiogram.fsm.storage.memory import MemoryStorage
-from aiogram.utils.keyboard import InlineKeyboardBuilder
-import random
-import logging
-import os
+from aiogram.types import Message
+from aiogram.filters import CommandStart
+from datetime import datetime
 
-API_TOKEN = os.getenv("API_TOKEN") or "7648494160:AAFxkHe-E9-1revY1tMGM1gVFz92L6zaXKI"
+TOKEN = "7648494160:AAFxkHe-E9-1revY1tMGM1gVFz92L6zaXKI"
 
-bot = Bot(token=API_TOKEN, default=Bot.create_default(parse_mode=ParseMode.HTML))
-dp = Dispatcher(storage=MemoryStorage())
+dp = Dispatcher()
+bot = Bot(token=TOKEN, parse_mode=ParseMode.HTML)
 
-# Расписание задач (время в формате HH:MM)
-schedule = {
-    "🥣 Завтрак": "06:10",
-    "💊 Таблетки": "06:30",
-    "💧 Вода": "08:00",
-    "🍛 Обед": "11:30",
-    "🏋️ Тренировка": "16:30",
-    "🍽️ Ужин": "18:00",
-    "🌙 Сон": "23:00"
+tasks_done = set()
+
+reminders = {
+    "05:50": "🌞 Подъём, чемпион! День ждёт тебя!",
+    "06:10": "🍳 Завтрак — топливо для побед!",
+    "11:30": "🍱 Обеденный рывок — время зарядиться!",
+    "16:30": "🏋️‍♂️ Вперёд на тренировку! Или 17:00, если опаздываешь ;)",
+    "18:00": "🍽️ Ужин настал! Или в 18:30 — выбирай!",
+    "23:00": "🌙 Сон — суперсила восстановления. Отбой!",
 }
 
-# История выполнений
-history = {}
+confirm_phrases = ["выполнено", "сделано", "готово", "ок", "да", "✔️"]
 
-# Разнообразные фразы
-phrases = [
-    "Вперёд, чемпион! 💪",
-    "Ну что, пора действовать! 🔥",
-    "Твоя цель ждёт тебя 🚀",
-    "Не забывай про {} 😎",
-    "{} — путь к успеху!"
-]
+@dp.message(CommandStart())
+async def start_handler(message: Message):
+    await message.answer("Привет! Я бот-напоминалка с юмором 😎 Погнали!")
 
-# Кнопка подтверждения
-def confirm_kb(task):
-    builder = InlineKeyboardBuilder()
-    builder.button(text="✅ Выполнено", callback_data=f"done_{task}")
-    return builder.as_markup()
+@dp.message()
+async def handle_message(message: Message):
+    user_text = message.text.strip().lower()
 
-# Отправка напоминаний
-async def send_reminders():
+    if any(p in user_text for p in confirm_phrases):
+        tasks_done.add(datetime.now().strftime("%H:%M"))
+        await message.answer('Ответ: "Выполнено"')
+    else:
+        await message.answer('Ответ: "Выполнено"')  # Можно изменить, если нужно другое поведение
+
+async def scheduler():
     while True:
         now = datetime.now().strftime("%H:%M")
-        for task, task_time in schedule.items():
-            if now == task_time:
-                for chat_id in history:
-                    phrase = random.choice(phrases).format(task)
-                    await bot.send_message(chat_id, f"<b>{task}</b>
-{phrase}", reply_markup=confirm_kb(task))
+        if now in reminders and now not in tasks_done:
+            for chat_id in [YOUR_CHAT_ID_HERE]:  # замени на нужный chat_id
+                task = reminders[now]
+                await bot.send_message(chat_id, f"<b>{task}</b>")
         await asyncio.sleep(60)
 
-# /start
-@dp.message(commands=["start"])
-async def start(message: types.Message):
-    history[message.chat.id] = []
-    await message.answer("Бот активирован! Я буду напоминать тебе о важных вещах 💡")
-
-# Обработка callback
-@dp.callback_query()
-async def handle_callback(call: types.CallbackQuery):
-    if call.data.startswith("done_"):
-        task = call.data.split("_", 1)[1]
-        history[call.message.chat.id].append((task, datetime.now().strftime("%H:%M")))
-        await call.message.edit_text(f"✅ {task} выполнено в {datetime.now().strftime('%H:%M')}")
-
-# Обработка других сообщений
-@dp.message()
-async def echo(message: types.Message):
-    await message.answer("Я бот-напоминалка 🤖. Жду время, чтобы напомнить тебе!")
-
 async def main():
-    asyncio.create_task(send_reminders())
+    asyncio.create_task(scheduler())
     await dp.start_polling(bot)
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO)
     asyncio.run(main())
