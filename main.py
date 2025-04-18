@@ -1,53 +1,86 @@
 import asyncio
+import logging
+import json
+from datetime import datetime, time
 from aiogram import Bot, Dispatcher, F
 from aiogram.enums import ParseMode
+from aiogram.client.default import DefaultBotProperties
 from aiogram.types import Message, ReplyKeyboardMarkup, KeyboardButton
-from datetime import datetime, time
-import logging
+from aiogram.fsm.context import FSMContext
+from aiogram.fsm.state import State, StatesGroup
 
 BOT_TOKEN = "8096013474:AAHurnRuSxgxfuzYXs3XeGzsFlrExeXdacw"
 USER_ID = 1130771677
+LOG_FILE = "tablet_dialog_log.json"
 
-bot = Bot(token=BOT_TOKEN, parse_mode=ParseMode.HTML)
+bot = Bot(token=BOT_TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
 dp = Dispatcher()
 
-reminders = [
-    (time(5, 50), "⏰ Вставай, чемпион! Новый день уже тут 💪"),
-    (time(6, 30), "💊 Не забудь утренние таблетки (после еды)!"),
-    (time(12, 30), "💊 Время обеденных таблеток — не пропусти!"),
-    (time(18, 30), "💊 Вечер настал — таблетки ждут тебя!"),
-]
+# FSM состояния
+class TabletCheck(StatesGroup):
+    awaiting_answer = State()
 
-kb_done = ReplyKeyboardMarkup(keyboard=[
-    [KeyboardButton(text="✅ Выполнено")]
+# Кнопки
+kb_yes_no = ReplyKeyboardMarkup(keyboard=[
+    [KeyboardButton(text="✅ Да"), KeyboardButton(text="❌ Нет")]
 ], resize_keyboard=True)
 
-@dp.message(F.text.lower() == "меню")
-async def menu(message: Message):
-    await message.answer("📋 Меню. Всё под контролем 👍", reply_markup=kb_done)
-
-@dp.message(F.text == "✅ Выполнено")
-async def confirm(message: Message):
-    await message.answer("Отмечено! Красавчик 🧠")
+# Логирование
+def log_entry(message: str):
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M")
+    entry = {"time": timestamp, "message": message}
+    try:
+        with open(LOG_FILE, "r", encoding="utf-8") as f:
+            data = json.load(f)
+    except:
+        data = []
+    data.append(entry)
+    with open(LOG_FILE, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
 
 @dp.message(commands=["start"])
-async def start(message: Message):
-    await message.answer("Привет! Я твой бот-напоминалка 🔔 Жди напоминаний и пиши «меню» когда захочешь.")
+async def start(message: Message, state: FSMContext):
+    await message.answer("Привет! Я бот, который заботится о твоих таблетках 💊", reply_markup=kb_yes_no)
+    await ask_tablets(message.chat.id, state)
 
-async def reminder_loop():
+@dp.message(TabletCheck.awaiting_answer, F.text.in_(["✅ Да", "❌ Нет"]))
+async def handle_answer(message: Message, state: FSMContext):
+    if message.text == "✅ Да":
+        await message.answer("Отлично! Рад это слышать 😊")
+        log_entry("✅ Пользователь подтвердил приём таблеток")
+    else:
+        await message.answer("Окей, напомню тебе через 30 минут ⏳")
+        log_entry("❌ Пользователь НЕ принял таблетки")
+        await asyncio.sleep(1800)
+        await bot.send_message(chat_id=message.chat.id, text="💊 Напоминаю: пора всё-таки принять таблетки!")
+    await state.clear()
+
+@dp.message()
+async def fallback(message: Message):
+    await message.answer("Напиши /start чтобы начать диалог 💬")
+
+# Отправка вопроса
+async def ask_tablets(chat_id: int, state: FSMContext):
+    await bot.send_message(chat_id=chat_id, text="💊 Ты уже принял утренние таблетки?", reply_markup=kb_yes_no)
+    await state.set_state(TabletCheck.awaiting_answer)
+
+# Фоновая задача — запускает диалог в 6:30 каждый день
+async def scheduler():
     while True:
         now = datetime.now().time().replace(second=0, microsecond=0)
-        for r_time, r_text in reminders:
-            if now == r_time:
-                try:
-                    await bot.send_message(chat_id=USER_ID, text=r_text, reply_markup=kb_done)
-                except Exception as e:
-                    logging.error(f"Ошибка отправки напоминания: {e}")
-        await asyncio.sleep(60)
+        if now == time(6, 30):
+            try:
+                ctx = dp.fsm.get_context(bot, USER_ID)
+                await ask_tablets(USER_ID, ctx)
+                log_entry("📤 Автоматически задан вопрос о таблетках в 6:30")
+            except Exception as e:
+                logging.error(f"Ошибка автозапуска: {e}")
+            await asyncio.sleep(60)
+        await asyncio.sleep(30)
 
 async def main():
     logging.basicConfig(level=logging.INFO)
-    asyncio.create_task(reminder_loop())
+    asyncio.create_task(scheduler())
     await dp.start_polling(bot)
 
 if __name__ == "__main__":
