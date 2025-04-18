@@ -15,7 +15,7 @@ TOKEN = "8096013474:AAHurnRuSxgxfuzYXs3XeGzsFlrExeXdacw"
 USER_ID = 1130771677
 WEBHOOK_PATH = f"/webhook"
 WEBHOOK_SECRET = ""
-WEBHOOK_URL = "https://telegram-reminder-bot123.onrender.com"
+WEBHOOK_URL = "https://your-app-name.onrender.com"
 WEB_SERVER_HOST = "0.0.0.0"
 WEB_SERVER_PORT = 8080
 LOG_FILE = "reminder_log.json"
@@ -121,7 +121,7 @@ async def main():
     logging.info(f"WEBHOOK URL: {WEBHOOK_URL + WEBHOOK_PATH}")
     logging.info(f"Listening on port {WEB_SERVER_PORT}")
 
-    await web.run_app(app, host=WEB_SERVER_HOST, port=WEB_SERVER_PORT)  # ← исправлено здесь
+    await web._run_app(app, host=WEB_SERVER_HOST, port=WEB_SERVER_PORT)
 
 if __name__ == "__main__":
     asyncio.run(main())
