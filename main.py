@@ -1,53 +1,52 @@
+
 import asyncio
+import logging
+from datetime import time, datetime
 from aiogram import Bot, Dispatcher, F
 from aiogram.enums import ParseMode
 from aiogram.types import Message
+from aiogram.client.default import DefaultBotProperties
 from aiogram.filters import CommandStart
-from datetime import datetime
 
-TOKEN = "7648494160:AAFxkHe-E9-1revY1tMGM1gVFz92L6zaXKI"
+TOKEN = "7968749408:AAFOgRg8mKlVAzTWlgjdMOcj33hnYe2vM-Q"
 
+# ✅ Создаем бота с новым способом задания parse_mode
+bot = Bot(token=TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
 dp = Dispatcher()
-bot = Bot(token=TOKEN, parse_mode=ParseMode.HTML)
 
-tasks_done = set()
-
-reminders = {
-    "05:50": "🌞 Подъём, чемпион! День ждёт тебя!",
-    "06:10": "🍳 Завтрак — топливо для побед!",
-    "11:30": "🍱 Обеденный рывок — время зарядиться!",
-    "16:30": "🏋️‍♂️ Вперёд на тренировку! Или 17:00, если опаздываешь ;)",
-    "18:00": "🍽️ Ужин настал! Или в 18:30 — выбирай!",
-    "23:00": "🌙 Сон — суперсила восстановления. Отбой!",
-}
-
-confirm_phrases = ["выполнено", "сделано", "готово", "ок", "да", "✔️"]
-
+# 💬 Пример приветствия
 @dp.message(CommandStart())
-async def start_handler(message: Message):
-    await message.answer("Привет! Я бот-напоминалка с юмором 😎 Погнали!")
+async def on_start(message: Message):
+    await message.answer("Привет! Я бот-напоминалка 😊 Готов к работе!")
 
-@dp.message()
-async def handle_message(message: Message):
-    user_text = message.text.strip().lower()
+# 🧠 Пример функции напоминания
+async def send_reminder(chat_id: int, task: str):
+    await bot.send_message(chat_id, f"<b>{task}</b>")
 
-    if any(p in user_text for p in confirm_phrases):
-        tasks_done.add(datetime.now().strftime("%H:%M"))
-        await message.answer('Ответ: "Выполнено"')
-    else:
-        await message.answer('Ответ: "Выполнено"')  # Можно изменить, если нужно другое поведение
-
-async def scheduler():
+# ⏰ Фоновая задача
+async def reminder_loop(chat_id: int):
     while True:
-        now = datetime.now().strftime("%H:%M")
-        if now in reminders and now not in tasks_done:
-            for chat_id in [YOUR_CHAT_ID_HERE]:  # замени на нужный chat_id
-                task = reminders[now]
-                await bot.send_message(chat_id, f"<b>{task}</b>")
-        await asyncio.sleep(60)
+        now = datetime.now().time()
 
+        schedule = {
+            time(5, 50): "Подъём, боец! 👀",
+            time(6, 10): "Завтрак — важен, как штанга! 🍳",
+            time(11, 30): "Обеденный сигнал! 🔔",
+            time(16, 30): "Время кача! 🏋️‍♂️",
+            time(18, 0): "Ужинать пора! 🍽",
+            time(23, 0): "Отбой! Спокойной ночи 🛌"
+        }
+
+        for task_time, task_text in schedule.items():
+            if now.hour == task_time.hour and now.minute == task_time.minute:
+                await send_reminder(chat_id, task_text)
+                await asyncio.sleep(60)  # не спамим
+
+        await asyncio.sleep(20)
+
+# 🚀 Старт бота
 async def main():
-    asyncio.create_task(scheduler())
+    logging.basicConfig(level=logging.INFO)
     await dp.start_polling(bot)
 
 if __name__ == "__main__":
