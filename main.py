@@ -3,6 +3,7 @@ import asyncio
 import json
 import logging
 import os
+import random
 from datetime import datetime
 from aiogram import Bot, Dispatcher, F
 from aiogram.enums import ParseMode
@@ -23,11 +24,25 @@ dp = Dispatcher(storage=MemoryStorage())
 scheduler = AsyncIOScheduler()
 completed = {}
 
+humor_variants = {'Подъём': ['⏰ Подъём, герой! Мир ждёт твоих побед!', 'Просыпайся! Даже будильник уже ушёл на работу 😄', 'Пора вставать! Успех не любит тех, кто дремлет 😉'], 'Таблетки': ['💊 Таблетки ждут! Не обижай их 😂', 'Тело скажет спасибо, если ты не забудешь про таблетки!', 'Лечиться — модно. 💊 Пора принять!'], 'Тренировка': ['🏋️\u200d♂️ Пора качать банку! Будущее тело не построит себя само!', 'Штанга уже скучает. Тренировка ждёт 💪', 'Хватит сидеть! Пора прокачаться!'], 'Сон': ['🌙 Сон — лучший восстановитель. Отбой, чемпион!', 'Засыпай красиво, просыпайся сильным 😴', 'Пора спать. Даже протеин уже лёг в кровать!']}
+
 if os.path.exists(HISTORY_FILE):
     with open(HISTORY_FILE, "r") as f:
         completed = json.load(f)
 
 reminders = [
+    ("⏰ Подъём", "05:50"),
+    ("🥣 Завтрак", "06:10"),
+    ("💊 Таблетки (утро)", "07:30"),
+    ("🚰 Вода", "09:00"),
+    ("🍽 Обед", "11:30"),
+    ("💊 Таблетки (обед)", "13:30"),
+    ("⚡️ Цитруллин + BCAA", "15:45"),
+    ("🏋️ Тренировка", "16:10"),
+    ("🍲 Ужин", "18:00"),
+    ("💊 Таблетки (вечер)", "20:30"),
+    ("🌙 Сон", "23:00")
+]
     ("⏰ Подъём", "05:50"),
     ("🥣 Завтрак", "06:10"),
     ("💊 Таблетки", "07:30"),
@@ -48,7 +63,24 @@ def save_history():
     with open(HISTORY_FILE, "w") as f:
         json.dump(completed, f, indent=2)
 
+
 async def send_reminder(title: str, key: str):
+    today = str(datetime.now().date())
+    user_data = completed.setdefault(str(USER_ID), {})
+    if user_data.get(f"{key}:{today}"):
+        return
+
+    humor = None
+    for k in humor_variants:
+        if k.lower() in title.lower():
+            humor = random.choice(humor_variants[k])
+            break
+    if not humor:
+        humor = f"{title} — пора! ⏳"
+
+    kb = get_keyboard(key)
+    await bot.send_message(chat_id=USER_ID, text=humor, reply_markup=kb)
+
     today = str(datetime.now().date())
     user_data = completed.setdefault(str(USER_ID), {})
     if user_data.get(f"{key}:{today}"):
