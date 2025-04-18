@@ -17,7 +17,7 @@ from utils import main_menu_keyboard as main_menu_kb
 
 load_dotenv()
 
-bot = Bot(token=os.getenv("BOT_TOKEN"), parse_mode=ParseMode.HTML)
+bot = Bot(token=os.getenv("BOT_TOKEN"), default=DefaultBotProperties(parse_mode=ParseMode.HTML))
 dp = Dispatcher(storage=MemoryStorage())
 
 @dp.message(F.text, F.text.lower() == "меню")
