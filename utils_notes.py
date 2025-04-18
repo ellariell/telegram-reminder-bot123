@@ -41,12 +41,23 @@ def get_due_notes(user_id: int):
     except:
         return []
 
-    now = datetime.now().strftime("%Y-%m-%d %H:%M")
+    now = datetime.now()
     user_notes = data.get(str(user_id), [])
-    due = [note for note in user_notes if note["time"] == now]
 
-    # Удалим выполненные
-    data[str(user_id)] = [note for note in user_notes if note["time"] != now]
+    due = []
+    remaining = []
+
+    for note in user_notes:
+        try:
+            note_time = datetime.strptime(note["time"], "%Y-%m-%d %H:%M")
+            if note_time <= now:
+                due.append(note)
+            else:
+                remaining.append(note)
+        except:
+            remaining.append(note)
+
+    data[str(user_id)] = remaining
 
     with open(NOTES_FILE, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
