@@ -96,6 +96,38 @@ def random_message(title):
     import random
     return random.choice(jokes.get(title, [f"{title} — пора!"]))
 
+
+@router.message(F.text == "/меню")
+async def menu_handler(message: Message):
+    keyboard = InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="📅 Мои напоминания", callback_data="menu:reminders")],
+        [InlineKeyboardButton(text="✅ История", callback_data="menu:history")],
+        [InlineKeyboardButton(text="🔄 Проверка бота", callback_data="menu:check")]
+    ])
+    await message.answer("📋 Главное меню:", reply_markup=keyboard)
+
+@router.callback_query(F.data == "menu:reminders")
+async def show_reminders(call: CallbackQuery):
+    text = "📅 Расписание на сегодня:\n" + "\n".join(f"• {title} — {t.strftime('%H:%M')}" for title, t in reminders)
+    await call.message.edit_text(text)
+
+@router.callback_query(F.data == "menu:history")
+async def show_history(call: CallbackQuery):
+    user_id = str(call.from_user.id)
+    today = str(datetime.now().date())
+    items = completed.get(user_id, {})
+    done_today = [k.split(":")[0] for k in items if k.endswith(today) and items[k]]
+    if done_today:
+        text = "✅ Выполнено сегодня:\n" + "\n".join(f"• {event}" for event in done_today)
+    else:
+        text = "❌ Сегодня пока ничего не выполнено."
+    await call.message.edit_text(text)
+
+@router.callback_query(F.data == "menu:check")
+async def menu_check(call: CallbackQuery):
+    await call.message.edit_text("✅ Бот работает. Напоминания активны.")
+
+
 async def schedule_all():
     for title, t in reminders:
         scheduler.add_job(send_reminder, CronTrigger(hour=t.hour, minute=t.minute), args=(USER_ID, title))
