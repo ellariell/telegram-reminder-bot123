@@ -75,7 +75,7 @@ def get_due_notes(user_id: int):
 async def cmd_start(message: Message):
     if message.chat.id == USER_ID:
         await message.answer("Привет! Напиши мне, что и когда напомнить")
-Пример: напомни мне завтра в 08:00 выпить воду")
+Пример: ("напомни мне завтра в 08:00 выпить воду")
 
 @router.message()
 async def handle_note(message: Message):
@@ -89,8 +89,8 @@ async def handle_note(message: Message):
         else:
             await message.answer("⚠️ Непонятный формат. Пример: напомни мне завтра в 08:00 выпить воду")
     else:
-        await message.answer("Напиши, что и когда напомнить.
-Пример: напомни мне сегодня в 20:00 позвонить другу")
+        await message.answer("Напиши, что и когда напомнить")
+Пример:("напомни мне сегодня в 20:00 позвонить другу")
 
 # Кнопки выбора
 @router.callback_query(F.data == "remind_later")
