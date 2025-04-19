@@ -4,7 +4,7 @@ import json
 from datetime import datetime, time
 from aiogram import Bot, Dispatcher, Router, F
 from aiogram.enums import ParseMode
-from aiogram.types import Message, ReplyKeyboardMarkup, KeyboardButton
+from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery, Message, ReplyKeyboardMarkup, KeyboardButton
 from aiogram.fsm.storage.memory import MemoryStorage
 from utils_notes import parse_note, save_note, get_due_notes
 
@@ -84,22 +84,58 @@ async def fallback(message: Message):
     else:
         await message.answer("Я тебя понял 😉")
 
-async def scheduler():
+
+async def check_reminders():
+    print("✅ check_reminders запущена")
     while True:
-        now = datetime.now().time().replace(second=0, microsecond=0)
+        now = datetime.now().strftime("%Y-%m-%d %H:%M")
+
+        # Проверим регулярные напоминания
+        current_time = datetime.now().time().replace(second=0, microsecond=0)
         for r_time, text in reminders:
-            if now == r_time:
+            if current_time == r_time:
+                print(f"🔔 Отправка регулярного напоминания: {text}")
                 await bot.send_message(chat_id=USER_ID, text=text, reply_markup=kb)
                 log_entry(f"🔔 Напоминание: {text}")
+
+        # Проверим пользовательские напоминания
         due_notes = get_due_notes(USER_ID)
         for note in due_notes:
-            await bot.send_message(chat_id=USER_ID, text=f"🔔 Напоминание: {note['text']}")
+            print(f"🔔 Отправка пользовательского напоминания: {note['text']}")
+            await bot.send_message(
+                chat_id=USER_ID,
+                text=f"🔔 Напоминание: {note['text']}",
+                reply_markup=InlineKeyboardMarkup(inline_keyboard=[
+                    [InlineKeyboardButton(text="🔁 Напомнить позже", callback_data="remind_later"),
+                     InlineKeyboardButton(text="❌ Не нужно", callback_data="remind_no")]
+                ])
+            )
         await asyncio.sleep(60)
 
+
 async def main():
-    asyncio.create_task(scheduler())
+    asyncio.create_task(check_reminders())
     logging.info("✅ Бот запущен. Ожидаем команды.")
     await dp.start_polling(bot)
 
 if __name__ == "__main__":
     asyncio.run(main())
+
+@dp.callback_query(F.data == "remind_later")
+async def remind_later_callback(callback: CallbackQuery, state: FSMContext):
+    data = await state.get_data()
+    text = data.get("last_reminder", "Без текста")
+    reminder_time = datetime.now() + timedelta(minutes=10)
+    REMINDERS.append({
+        "chat_id": callback.message.chat.id,
+        "text": text,
+        "time": reminder_time.strftime("%Y-%m-%d %H:%M")
+    })
+    await callback.message.answer(f"⏳ Хорошо, напомню через 10 минут.")
+    await callback.answer()
+
+
+@dp.callback_query(F.data == "remind_no")
+async def remind_no_callback(callback: CallbackQuery):
+    await callback.message.answer("✅ Хорошо, не буду напоминать.")
+    await callback.answer()
