@@ -6,23 +6,15 @@ from aiogram import Bot, Dispatcher, Router, F
 from aiogram.enums import ParseMode
 from aiogram.types import Message, ReplyKeyboardMarkup, KeyboardButton
 from aiogram.fsm.storage.memory import MemoryStorage
-from aiogram.webhook.aiohttp_server import SimpleRequestHandler, setup_application
-from aiogram.client.default import DefaultBotProperties
-from aiohttp import web
 from utils_notes import parse_note, save_note, get_due_notes
 
 TOKEN = "8096013474:AAHurnRuSxgxfuzYXs3XeGzsFlrExeXdacw"
 USER_ID = 1130771677
-WEBHOOK_PATH = f"/webhook"
-WEBHOOK_SECRET = ""
-WEBHOOK_URL = "https://your-app-name.onrender.com"
-WEB_SERVER_HOST = "0.0.0.0"
-WEB_SERVER_PORT = 8080
 LOG_FILE = "reminder_log.json"
 
 logging.basicConfig(level=logging.INFO)
 
-bot = Bot(token=TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
+bot = Bot(token=TOKEN, parse_mode=ParseMode.HTML)
 dp = Dispatcher(storage=MemoryStorage())
 router = Router()
 dp.include_router(router)
@@ -41,7 +33,7 @@ reminders = [
     (time(12, 30), "💊 Обеденные таблетки — время подзаправиться!"),
     (time(16, 10), "🏋️‍♂️ Тренировка скоро! Надень кроссовки, настрой плейлист и вперёд!"),
     (time(18, 30), "💊 Вечерние таблетки — завершаем день по правилам!"),
-    (time(23, 00), "🌙 Сон! Завтра снова побеждать 💪")
+    (time(23, 0), "🌙 Сон! Завтра снова побеждать 💪")
 ]
 
 def log_entry(message: str):
@@ -103,25 +95,10 @@ async def scheduler():
             await bot.send_message(chat_id=USER_ID, text=f"🔔 Напоминание: {note['text']}")
         await asyncio.sleep(60)
 
-async def on_startup(bot: Bot):
-    await bot.set_webhook(WEBHOOK_URL + WEBHOOK_PATH, secret_token=WEBHOOK_SECRET)
-    asyncio.create_task(scheduler())
-
-async def on_shutdown(bot: Bot):
-    await bot.delete_webhook()
-
 async def main():
-    app = web.Application()
-    dp.startup.register(on_startup)
-    dp.shutdown.register(on_shutdown)
-
-    SimpleRequestHandler(dispatcher=dp, bot=bot, secret_token=WEBHOOK_SECRET).register(app, path=WEBHOOK_PATH)
-    setup_application(app, dp, bot=bot)
-
-    logging.info(f"WEBHOOK URL: {WEBHOOK_URL + WEBHOOK_PATH}")
-    logging.info(f"Listening on port {WEB_SERVER_PORT}")
-
-    await web._run_app(app, host=WEB_SERVER_HOST, port=WEB_SERVER_PORT)
+    asyncio.create_task(scheduler())
+    logging.info("✅ Бот запущен. Ожидаем команды.")
+    await dp.start_polling(bot)
 
 if __name__ == "__main__":
     asyncio.run(main())
