@@ -74,7 +74,7 @@ def get_due_notes(user_id: int):
 @router.message(F.text == "/start")
 async def cmd_start(message: Message):
     if message.chat.id == USER_ID:
-        await message.answer("Привет! Напиши мне, что и когда напомнить.
+        await message.answer("Привет! Напиши мне, что и когда напомнить")
 Пример: напомни мне завтра в 08:00 выпить воду")
 
 @router.message()
